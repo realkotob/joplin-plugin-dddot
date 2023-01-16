@@ -8,6 +8,10 @@ export default class Link {
 
     title: string;
 
+    parentId: string;
+
+    finalTitle: string;
+
     type: LinkType;
 
     isTodo: boolean | undefined;
@@ -46,6 +50,7 @@ export default class Link {
         const link = new Link();
         link.id = data.id ?? "";
         link.title = data.title ?? "";
+        link.parentId = data.parent_id ?? "";
         link.isTodo = data.is_todo === 1;
         link.isTodoCompleted = data.todo_completed > 0;
         link.type = LinkType.NoteLink;

@@ -7,7 +7,9 @@ import { ItemChangeEventType } from "../../repo/joplinrepo";
 
 const RecentNotesContentSetting = "dddot.settings.recentnotes.content";
 const RecentNotesMaxNotesSetting = "dddot.settings.recentnotes.maxnotes";
+const RecentNotesShowFullPathSetting = "dddot.settings.recentnotes.showfullpath";
 const RecentNotesMaxNotesSettingDefaultValue = 5;
+const RecentNotesShowFullPathSettingDefaultValue = false;
 
 export default class RecentNotes extends Tool {
     linkListModel: LinkListModel = new LinkListModel();
@@ -23,6 +25,13 @@ export default class RecentNotes extends Tool {
             },
             [RecentNotesMaxNotesSetting]: {
                 value: RecentNotesMaxNotesSettingDefaultValue,
+                type: SettingItemType.Bool,
+                public: true,
+                label: "Recent Notes - Show full path for notes",
+                section,
+            },
+            [RecentNotesShowFullPathSetting]: {
+                value: RecentNotesShowFullPathSettingDefaultValue,
                 type: SettingItemType.Int,
                 public: true,
                 label: "Recent Notes - Max number of notes",
@@ -111,7 +120,7 @@ export default class RecentNotes extends Tool {
 
     async onReady() {
         await this.truncate();
-        return this.render();
+        return await this.render();
     }
 
     async truncate() {
@@ -122,16 +131,36 @@ export default class RecentNotes extends Tool {
         this.linkListModel.links = this.linkListModel.links.slice(0, maxVisibleItemCount);
     }
 
-    render() {
+    async render() {
         const { links } = this.linkListModel;
         const {
             rendererService,
         } = this.servicePool;
 
-        const list = links.map((note: any) => {
+        const showFullPath = await this.joplinRepo.settingsLoad(
+            RecentNotesShowFullPathSetting,
+            RecentNotesShowFullPathSettingDefaultValue,
+        );
+
+        if (showFullPath) {
+            // Change the title to the title + parent folder name
+            for (let i = 0; i < links.length; i++) {
+                const link = links[i];
+                const parentFolder = await this.joplinRepo.dataGet(["folders", link.parentId], {fields: ["id", "title"]});
+                link.finalTitle = `${parentFolder.title}/(${link.title})`;
+            }
+        } else {
+            // Change the title to the title + parent folder name
+            for (let i = 0; i < links.length; i++) {
+                const link = links[i];
+                link.finalTitle = link.title;
+            }
+        }
+
+        const list = links.map((note: Link) => {
             const link = rendererService.renderNoteLink(
                 note.id,
-                note.title,
+                note.finalTitle,
                 {
                     onClick: {
                         type: "dddot.openNote",
