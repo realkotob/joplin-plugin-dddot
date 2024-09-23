@@ -1,28 +1,13 @@
 import joplin from "api";
 import { ToolbarButtonLocation } from "api/types";
-import i18next from "i18next";
-import resourcesToBackend from "i18next-resources-to-backend";
 import Panel from "./panel";
+import { initializeI18N } from "./i18n";
 
 joplin.plugins.register({
     async onStart() {
         const locale = await joplin.settings.globalValue("locale");
 
-        i18next
-            .use(resourcesToBackend((language, namespace, callback) => {
-                import(`./locales/${language}.json`)
-                    .then((resources) => {
-                        callback(null, resources);
-                    })
-                    .catch((error) => {
-                        callback(error, null);
-                    });
-            }))
-            .init({
-                lng: locale,
-                debug: true,
-                fallbackLng: "en",
-            });
+        initializeI18N(locale);
 
         const panel = new Panel();
 

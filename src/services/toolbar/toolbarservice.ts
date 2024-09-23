@@ -1,24 +1,20 @@
 import JoplinService from "../joplin/joplinservice";
-import RendererService from "../renderer/rendererservice";
 
 interface ToolbarItem {
   name: string;
   icon: string;
   tooltip: string;
-  onClick: any;
-  onContextMenu?: any;
+  onClick: object;
+  onContextMenu?: object;
 }
 
 export default class ToolbarService {
     joplinService: JoplinService;
 
-    rendererServie: RendererService;
-
     toolbarItems: ToolbarItem[] = [];
 
-    constructor(joplinService: JoplinService, rendererService: RendererService) {
+    constructor(joplinService: JoplinService) {
         this.joplinService = joplinService;
-        this.rendererServie = rendererService;
     }
 
     async onLoaded() {
@@ -29,37 +25,6 @@ export default class ToolbarService {
         this.toolbarItems.push(item);
     }
 
-    render() {
-        if (this.toolbarItems.length === 0) {
-            return undefined;
-        }
-        const buttons = this.toolbarItems.map((item) => this.renderButton(item)).join("\n");
-        return `
-      <div class="dddot-toolbar-content">
-        ${buttons}
-      </div>`;
-    }
-
-    renderButton(item: ToolbarItem) {
-        const events = ["onClick", "onContextMenu"];
-
-        const listeners = events.map((event) => {
-            if (item[event] !== undefined) {
-                return `${event.toLocaleLowerCase()}="${this.rendererServie.renderInlineDDDotPostMessage(item[event])}; return false;"`;
-            }
-            return undefined;
-        }).filter((listener) => listener !== undefined);
-        const js = listeners.join(" ");
-
-        return `
-      <div class="dddot-toolbar-item tooltip-bottom-left" data-tooltip="${item.tooltip}" ${js}>
-        <div class="dddot-toolbar-item-icon dddot-clickable">
-          <i class="${item.icon} fas"></i>
-        </div>
-      </div>
-    `;
-    }
-
     async onMessage(message: any) {
         const {
             type,
@@ -67,7 +32,7 @@ export default class ToolbarService {
 
         switch (type) {
         case "toolbar.service.onReady":
-            return this.render();
+            return this.toolbarItems;
         default:
             break;
         }

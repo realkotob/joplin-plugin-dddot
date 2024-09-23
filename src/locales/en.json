@@ -4,6 +4,11 @@
     "shortcuts.title": "Shortcuts",
     "shortcuts.enable": "Enable Shortcuts",
     "shortcuts.drag_note_here": "Drag a note here",
+    "shortcuts.import_export_tooltip": "Import/Export",
+    "shortcuts.import": "Import",
+    "shortcuts.export": "Export",
+    "shortcuts.imported": "Imported",
+    "shortcuts.import_error": "Invalid shortcuts file. Please check the file content and try again.",
     "scratchpad.title": "Scratchpad",
     "scratchpad.enable": "Enable Scratchpad",
     "recentnotes.title": "Recent Notes",
@@ -23,5 +28,14 @@
     "dailynote.open_daily_note": "Open Daily Note",
     "randomnote.title": "Random Note",
     "randomnote.enable": "Enable Random Note",
-    "randomnote.open_random_note": "Open Random Note"
+    "randomnote.open_random_note": "Open Random Note",
+    "outline.title": "Outline",
+    "outline.enable": "Enable Outline",
+    "outline.link_copied": "Link copied!",
+    "outline.settings.height": "Outline Height(px)",
+    "outline.resize_to_fit_tooltip": "Resize Height to Fit Content",
+    "outline.settings.resize_mode": "Outline Resize Mode",
+    "outline.settings.manual": "Manual mode",
+    "outline.settings.auto": "Auto mode",
+    "outline.settings.schemas": "Include URL with schemas (',' separated, e.g. http,https,file)"
 }

@@ -2,8 +2,8 @@ import { SettingItemType } from "api/types";
 import { t } from "i18next";
 import Tool from "../tool";
 import LinkListModel from "../../models/linklistmodel";
-import Link from "../../types/link";
 import { ItemChangeEventType } from "../../repo/joplinrepo";
+import { LinkMonad } from "../../types/link";
 
 const RecentNotesContentSetting = "dddot.settings.recentnotes.content";
 const RecentNotesMaxNotesSetting = "dddot.settings.recentnotes.maxnotes";
@@ -65,18 +65,28 @@ export default class RecentNotes extends Tool {
     }
 
     async refresh() {
-        const html = this.render();
-
+        const links = this.read();
         const message = {
             type: "recentnotes.refresh",
-            html,
+            links,
         };
 
         this.joplinRepo.panelPostMessage(message);
+        return links;
+    }
+
+    read() {
+        return this.linkListModel.links.map((link) => ({
+            id: link.id,
+            title: link.title,
+            type: link.type,
+            isTodo: link.isTodo,
+            isTodoCompleted: link.isTodoCompleted,
+        }));
     }
 
     async insertLink(note) {
-        const prependLink = Link.createNoteLinkFromRawData(note);
+        const prependLink = LinkMonad.createNoteLinkFromRawData(note);
 
         this.linkListModel.unshift(prependLink);
 
@@ -111,7 +121,7 @@ export default class RecentNotes extends Tool {
 
     async onReady() {
         await this.truncate();
-        return this.render();
+        return this.read();
     }
 
     async truncate() {
@@ -120,35 +130,6 @@ export default class RecentNotes extends Tool {
             RecentNotesMaxNotesSettingDefaultValue,
         );
         this.linkListModel.links = this.linkListModel.links.slice(0, maxVisibleItemCount);
-    }
-
-    render() {
-        const { links } = this.linkListModel;
-        const {
-            rendererService,
-        } = this.servicePool;
-
-        const list = links.map((note: any) => {
-            const link = rendererService.renderNoteLink(
-                note.id,
-                note.title,
-                {
-                    onClick: {
-                        type: "dddot.openNote",
-                        noteId: note.id,
-                    },
-                    onContextMenu: {
-                        type: "recentnotes.tool.openNoteDetailDialog",
-                        noteId: note.id,
-                    },
-                    isTodo: note.isTodo,
-                    isTodoCompleted: note.isTodoCompleted,
-                },
-            );
-            return link;
-        });
-        const html = ["<div class=dddot-note-list>", ...list, "</div>"];
-        return html.join("\n");
     }
 
     get key() {

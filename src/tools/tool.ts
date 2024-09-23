@@ -2,6 +2,7 @@ import { MenuItem } from "api/types";
 import JoplinRepo from "../repo/joplinrepo";
 import JoplinService from "../services/joplin/joplinservice";
 import ServicePool from "../services/servicepool";
+import { ToolButton } from "../types/toolinfo";
 
 export function blockDisabled(_target, _name, descriptor) {
     const original = descriptor.value;
@@ -65,6 +66,10 @@ export default class Tool {
         const res = await this.joplinRepo.settingsLoad(this.genSettingKey("enabled"), true);
         this.isEnabled = res as Boolean;
         return res;
+    }
+
+    async queryExtraButtons(): Promise<ToolButton[]> {
+        return [];
     }
 
     genSettingKey(key: string) {

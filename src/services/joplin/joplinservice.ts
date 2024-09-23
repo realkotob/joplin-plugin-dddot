@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import ThemeType from "../../types/themetype";
 import JoplinRepo from "../../repo/joplinrepo";
 import PlatformRepo from "../../repo/platformrepo";
-import Link from "../../types/link";
+import { Link, LinkMonad } from "../../types/link";
 import TimerRepo from "../../repo/timerrepo";
 
 export async function sha256(message) {
@@ -62,7 +62,7 @@ export default class JoplinService {
                 fields: ["id", "title", "is_todo", "todo_completed"],
             },
         );
-        return Link.createNoteLinkFromRawData(note);
+        return LinkMonad.createNoteLinkFromRawData(note);
     }
 
     async createFolderLink(folderId: string): Promise<Link> {
@@ -72,7 +72,24 @@ export default class JoplinService {
                 fields: ["id", "title"],
             },
         );
-        return Link.createFolderLink(folder.id, folder.title);
+        return LinkMonad.createFolderLink(folder.id, folder.title);
+    }
+
+    async searchNoteByTitle(title: string, maxCount?: number) {
+        let items = [];
+        const query = this.dataGet(
+            ["search"],
+            { query: title, fields: ["id", "title"] },
+        );
+        // eslint-disable-next-line no-restricted-syntax
+        for await (const result of query) {
+            const notes = result.items.filter((item) => item.title.includes(title));
+            items = items.concat(notes);
+            if (maxCount !== undefined && items.length >= maxCount) {
+                break;
+            }
+        }
+        return maxCount !== undefined ? items.slice(0, maxCount) : items;
     }
 
     async searchBacklinks(id: string): Promise<Link[]> {
@@ -93,8 +110,8 @@ export default class JoplinService {
         }
 
         const links = items.map(
-            (item) => Link.createNoteLinkFromRawData(item),
-        );
+            (item) => LinkMonad.createNoteLinkFromRawData(item),
+        ).filter((item) => item.id !== id);
         return links;
     }
 

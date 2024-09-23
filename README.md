@@ -1,4 +1,5 @@
-# Joplin DDDot
+Joplin DDDot
+===========
 
 DDDot is a Joplin plugin to provide a set of tools like recent notes, shortcuts, scratchpad, and .... in a single sidebar.
 
@@ -7,9 +8,10 @@ DDDot is a Joplin plugin to provide a set of tools like recent notes, shortcuts,
 1. Recent Notes - Show recently opened notes
 2. Shortcuts - A bookmark of faviour notes
 3. Scratchpad - Write something quickly without bothering to find the right note to insert
-4. Backlinks - Show the backlinks of the currently selected note
-5. Daily Note - Create / Open a note for today.
-6. Random Note - Open a random note
+4. Backlinks - Show the backlinks of the selected note
+5. Outline - Show the table of content of the selected note
+6. Daily Note - Create / Open a note for today.
+7. Random Note - Open a random note
 
 ![Screenshot](https://user-images.githubusercontent.com/82716/193397815-c3cbfa48-0507-4341-8125-2bdb63877b3c.png)
 
@@ -18,7 +20,6 @@ DDDot is a Joplin plugin to provide a set of tools like recent notes, shortcuts,
 - Support to enable/disable an individual tool
 - Support changing the tool order by drag and drop
 - Support dark theme
-- Sort selected text
 
 # User Guide
 
@@ -43,12 +44,40 @@ The links in Recent Notes and Backlinks are draggable. You may drag it to the no
 - Add a shortcut to a note - Drag a note from the note list over the Shortcuts area. 
 - Add a shortcut to a notebook - Drag a folder from the Notebooks list over the Shortcuts area.
 - Remove shortcut - Right-click on a shortcut. It will prompt a dialog for confirmation
+- Import/Export shortcut list
 
 Add a shortcut to search
 
 Install the [Embed search](https://discourse.joplinapp.org/t/embed-any-search-with-content/14328) plugin
 Create a note with embed search
 Drag the note from the note list over the Shortcuts tool
+
+## Outline
+
+![image](https://github.com/benlau/joplin-plugin-dddot/assets/82716/a90087a5-1e95-4b75-a690-38ef472302f5)
+
+**Features**:
+
+- Show the table of content of the selected note
+- Click on the item will go to the section
+- Press the "Copy" button to copy the link of the section
+- Manual/Auto Resize Mode
+- Link filter
+
+**Manual vs Auto Resize Mode**
+
+The Outline tool has a fixed height by default. Users could adjust it by dragging the border or clicking the "Resize Height to Fit Content" button.
+
+Users may change it to be auto resized via the Joplin Plugin settings. 
+
+**Link filter**
+
+![image](https://github.com/benlau/joplin-plugin-dddot/assets/82716/bdf1a47f-cb9a-4257-8b7c-d99ce8b0629a)
+
+The Outline tool support to display more than just headings; it can also show links within the note. To configure this, go to Settings > DDDot > Include URL with schemas (comma-separated, e.g., http, https, file). Here, you can specify the types of links you want to appear in the Outline.
+
+
+
 
 ## Daily Note
 

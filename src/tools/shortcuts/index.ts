@@ -4,7 +4,7 @@ import Tool from "../tool";
 import LinkListModel from "../../models/linklistmodel";
 import { ItemChangeEventType } from "../../repo/joplinrepo";
 import JoplinService from "../../services/joplin/joplinservice";
-import { LinkType } from "../../types/link";
+import { Link } from "../../types/link";
 
 const ShortcutsContent = "dddot.settings.shortcuts.content";
 
@@ -17,7 +17,7 @@ export default class Shortcuts extends Tool {
                 value: [],
                 type: SettingItemType.Object,
                 public: false,
-                label: "Recent Notes",
+                label: "Shortcuts",
                 section,
             },
         };
@@ -35,7 +35,7 @@ export default class Shortcuts extends Tool {
                 } = note;
                 if (this.linkListModel.update(id, { title })) {
                     await this.save();
-                    this.refresh(this.render());
+                    this.refresh(this.read());
                 }
             }
         });
@@ -44,14 +44,20 @@ export default class Shortcuts extends Tool {
     async onMessage(message: any) {
         switch (message.type) {
         case "shortcuts.onReady":
-            return this.render();
+            return this.read();
         case "shortcuts.onNoteDropped":
             return this.pushNote(message.noteId);
         case "shortcuts.tool.removeLink":
             this.removeLink(message.id);
             return undefined;
+        case "shortcuts.importShortcuts":
+            this.importShortcuts(message.shortcuts);
+            break;
+        case "shortcuts.onImportExportClicked":
+            this.showOverlay();
+            return undefined;
         case "shortcuts.onOrderChanged":
-            await this.onOrderChanged(message.noteIds);
+            await this.onOrderChanged(message.linkIds);
             break;
         case "shortcuts.tool.pushFolder":
             return this.pushFolder(message.folderId);
@@ -61,50 +67,20 @@ export default class Shortcuts extends Tool {
         return undefined;
     }
 
-    render() {
-        const { links } = this.linkListModel;
-        const {
-            rendererService,
-        } = this.servicePool;
-
-        if (links.length === 0) {
-            return `<div class='dddot-tool-help-text'>${t("shortcuts.drag_note_here")}</div>`;
-        }
-        const list = links.map((link: any) => {
-            const options = (link.type === LinkType.NoteLink) ? {
-                onClick: {
-                    type: "dddot.openNote",
-                    noteId: link.id,
-                },
-                onContextMenu: {
-                    type: "shortcuts.tool.removeLink",
-                    id: link.id,
-                },
-                isTodo: link.isTodo,
-                isTodoCompleted: link.isTodoCompleted,
-            } : {
-                onClick: {
-                    type: "panel.openFolder",
-                    folderId: link.id,
-                },
-                onContextMenu: {
-                    type: "shortcuts.tool.removeLink",
-                    id: link.id,
-                },
-                isTodo: false,
-                isTodoCompleted: false,
-            };
-
-            return rendererService.renderNoteLink(link.id, link.title, options);
-        });
-        const html = ["<div id='dddot-shortcuts-list' class='dddot-note-list'>", ...list, "</div>"];
-        return html.join("\n");
+    read(): Link[] {
+        return this.linkListModel.links.map((link) => ({
+            id: link.id,
+            title: link.title,
+            type: link.type,
+            isTodo: link.isTodo,
+            isTodoCompleted: link.isTodoCompleted,
+        }));
     }
 
-    async refresh(html: any) {
+    async refresh(links: Link[]) {
         this.joplinRepo.panelPostMessage({
             type: "shortcuts.refresh",
-            html,
+            links,
         });
     }
 
@@ -113,7 +89,7 @@ export default class Shortcuts extends Tool {
         this.linkListModel.push(link);
         await this.save();
 
-        return this.render();
+        this.refresh(this.read());
     }
 
     async removeLink(id: string) {
@@ -124,7 +100,7 @@ export default class Shortcuts extends Tool {
 
         this.linkListModel.remove(id);
         await this.save();
-        this.refresh(this.render());
+        this.refresh(this.read());
     }
 
     async pushFolder(folderId: string) {
@@ -132,11 +108,11 @@ export default class Shortcuts extends Tool {
         this.linkListModel.push(link);
         await this.save();
 
-        return this.render();
+        this.refresh(this.read());
     }
 
-    async onOrderChanged(noteIds: string[]) {
-        this.linkListModel.reorder(noteIds);
+    async onOrderChanged(linkIds: string[]) {
+        this.linkListModel.reorder(linkIds);
         await this.save();
     }
 
@@ -150,5 +126,29 @@ export default class Shortcuts extends Tool {
 
     get title() {
         return t("shortcuts.title");
+    }
+
+    async queryExtraButtons() {
+        return [
+            {
+                tooltip: t("shortcuts.import_export_tooltip"),
+                icon: "fas fa-file-export",
+                message: {
+                    type: "shortcuts.onImportExportClicked",
+                },
+            },
+        ];
+    }
+
+    showOverlay() {
+        this.joplinRepo.panelPostMessage({
+            type: "shortcuts.showOverlay",
+        });
+    }
+
+    async importShortcuts(shortcuts: Link[]) {
+        this.linkListModel.rehydrate(shortcuts);
+        await this.save();
+        this.refresh(this.read());
     }
 }

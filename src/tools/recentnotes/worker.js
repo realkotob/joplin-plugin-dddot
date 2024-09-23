@@ -1,15 +1,11 @@
 // eslint-disable-next-line
 async function recentnotesWorker() {
-    const contentId = "#dddot-recentnotes-tool-content";
-
-    const refresh = (content) => {
-        $(contentId).html(content);
-
-        DDDot.setupDraggableLinks(`${contentId} .dddot-note-item`);
+    const refresh = (links) => {
+        App.setSectionViewProp("recentnotes", "links", links);
     };
 
     DDDot.onMessage("recentnotes.refresh", (message) => {
-        refresh(message.html);
+        refresh(message.links);
     });
 
     const response = await DDDot.postMessage({

@@ -1,5 +1,5 @@
 import joplin from "api";
-import { SettingItemType } from "api/types";
+import { ContentScriptType, SettingItemType } from "api/types";
 import { t } from "i18next";
 import ScratchPad from "./tools/scratchpad";
 import RecentNotes from "./tools/recentnotes";
@@ -12,6 +12,8 @@ import ThemeType from "./types/themetype";
 import DailyNoteTool from "./tools/dailynote/dailynotetool";
 import RandomNoteTool from "./tools/randomnote/randomnotetool";
 import PlatformRepo from "./repo/platformrepo";
+import { ToolInfo } from "./types/toolinfo";
+import OutlineTool from "./tools/outline";
 
 const ToolOrder = "dddot.settings.panel.toolorder";
 
@@ -27,14 +29,14 @@ export default class Panel {
     async loadResources() {
         const resources = [
             "./panel.css",
+            "./sandbox/app.js",
             "./sandbox/dddot.js",
-            "./libs/jquery.min.js",
             "./sandbox/codemirror5manager.js",
             "./libs/codemirror.js",
             "./libs/codemirror.css",
-            "./libs/Sortable.min.js",
             "./theme/codemirror/blackboard.css",
             "./styles/css-tooltip.css",
+            "./styles/tailwind.css",
         ].concat(this.servicePool.assetFiles);
 
         await Promise.all(
@@ -53,25 +55,17 @@ export default class Panel {
         await Promise.all(
             scripts.map(async (script) => joplin.views.panels.addScript(this.view, script)),
         );
+
+        await joplin.contentScripts.register(
+            ContentScriptType.CodeMirrorPlugin,
+            "dddot.contentScript",
+            "./sandbox/contentScript.js",
+        );
     }
 
     async render() {
-        const toolHtmls = this.tools.filter((tool) => tool.hasView).map((tool: Tool) => {
-            const content = `
-            <div class="dddot-tool dddot-hidden" data-id="${tool.key}" id="${tool.containerId}">
-            <div class="dddot-tool-header">
-                <h3><i class="fas fa-bars"></i> ${tool.title}</h3>
-                <h3 class="dddot-expand-button dddot-expand-button-active"><i class="fas fa-play"></i></h3>
-            </div>
-                <div id="${tool.contentId}"></div>
-            </div>
-            `;
-            return content;
-        }).join("\n");
         const html = `
-        <div id="dddot-panel-container">
-            <div id="dddot-toolbar-container"></div>
-            ${toolHtmls}
+        <div id="dddot-app">
         </div>
         `;
         await joplin.views.panels.setHtml(this.view, html);
@@ -130,9 +124,10 @@ export default class Panel {
         const backLinks = new BackLinks(this.servicePool);
         const dailyNote = new DailyNoteTool(this.servicePool);
         const randomNote = new RandomNoteTool(this.servicePool);
+        const outlineTool = new OutlineTool(this.servicePool);
 
         const tools = [
-            scratchpad, shortcuts, recentlyNotes, backLinks,
+            scratchpad, outlineTool, shortcuts, recentlyNotes, backLinks,
             dailyNote, randomNote];
         this.tools = tools;
 
@@ -221,8 +216,11 @@ export default class Panel {
     }
 
     async onLoaded() {
+        /// Triggered by DDDot.onLoad which may be called multiple times
+        /// e.g when the panel is hidden and shown again
         const {
             joplinService,
+            joplinRepo,
         } = this.servicePool;
 
         await this.servicePool.onLoaded();
@@ -242,7 +240,12 @@ export default class Panel {
                     workerFunctionName,
                     containerId,
                     contentId,
+                    key,
+                    title,
+                    hasView,
                 } = tool;
+
+                const extraButtons = await tool.queryExtraButtons();
 
                 const enabled = await tool.updateEnabledFromSetting();
 
@@ -251,20 +254,27 @@ export default class Panel {
                 }
 
                 return {
+                    title: t(title),
+                    key,
                     workerFunctionName,
                     containerId,
                     contentId,
                     enabled,
-                };
+                    hasView,
+                    extraButtons,
+                } as ToolInfo;
             }),
         );
         const currentTheme = await joplinService.queryThemeType();
         const { serviceWorkerFunctions } = this.servicePool;
 
+        const locale = await joplinRepo.settingsLoadGlobal("locale", "en");
+
         this.joplinRepo.panelPostMessage({
             type: "dddot.start",
             tools,
             serviceWorkerFunctions,
+            locale,
             theme: {
                 name: ThemeType[currentTheme],
                 isDarkTheme: ThemeType.isDarkTheme(currentTheme),
